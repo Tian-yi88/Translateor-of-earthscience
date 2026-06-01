@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地球科学学术翻译插件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 定制滚动条以适应侧边栏插件风格 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col m-0 overflow-hidden text-gray-800">
+
+    <!-- 插件头部 -->
+    <header class="bg-emerald-800 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-2">
+            <!-- 地球图标 -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h1 class="font-bold text-lg tracking-wide">GeoScience 翻译助手</h1>
+        </div>
+        <span class="text-xs bg-emerald-700 px-2 py-1 rounded-full border border-emerald-600">专业版</span>
+    </header>
+
+    <!-- 插件主体区 -->
+    <main class="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
+        
+        <!-- 设定提示区 -->
+        <div class="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg border border-blue-100 flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>已启用<strong>地球科学</strong>领域语料库（涵盖地质、地球物理、气象、海洋等）。将自动优化专业名词翻译。</p>
+        </div>
+
+        <!-- 自动翻译开关 & 测试区 (新增功能) -->
+        <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-semibold text-gray-800">划词自动翻译</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="autoTranslateToggle" class="sr-only peer" onchange="toggleAutoTranslate()">
+                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+            </div>
+            <span class="text-xs text-gray-500">开启后选中文本即可自动翻译</span>
+        </div>
+
+        <!-- 供测试划词的样例文本 (新增) -->
+        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs text-gray-700 select-text leading-relaxed">
+            <strong>📝 划词测试区：</strong>The Pacific plate <span class="bg-yellow-200">subducts</span> beneath the Mariana plate, forming the Mariana Trench. <span class="bg-yellow-200">Mantle plumes</span> can create hotspots like Hawaii. (打开上方开关后，试着用鼠标选中这段英文)
+        </div>
+
+        <!-- 选词/输入区 -->
+        <div class="flex flex-col gap-2 flex-1">
+            <label for="sourceText" class="text-sm font-semibold text-gray-700 flex justify-between items-center">
+                <span>原文 (English)</span>
+                <button onclick="clearText()" class="text-gray-400 hover:text-red-500 text-xs transition-colors">清空</button>
+            </label>
+            <textarea id="sourceText" 
+                class="w-full h-40 p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none shadow-inner bg-white"
+                placeholder="请将 PDF 或文档中的学术文本粘贴到此处..."></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex justify-center shrink-0">
+            <button id="translateBtn" onclick="performTranslation()" 
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-all flex items-center gap-2 w-full justify-center active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
+                开始专业翻译
+            </button>
+        </div>
+
+        <!-- 翻译结果区 -->
+        <div class="flex flex-col gap-2 flex-1 mt-2">
+            <label class="text-sm font-semibold text-gray-700 flex justify-between items-center">
+                <span>译文 (中文)</span>
+                <button onclick="copyResult()" id="copyBtn" class="text-emerald-600 hover:text-emerald-800 text-xs transition-colors hidden font-medium">复制译文</button>
+            </label>
+            <div id="resultContainer" class="relative w-full min-h-[160px] p-4 text-sm border border-emerald-200 rounded-lg bg-emerald-50 shadow-inner overflow-y-auto leading-relaxed text-gray-800">
+                <span class="text-gray-400 italic">翻译结果将显示在这里...</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="bg-gray-100 p-2 text-center text-xs text-gray-500 border-t border-gray-200 shrink-0">
+        WPS / Web 侧边栏插件布局预览
+    </footer>
+
+    <script>
+        // 配置 API Key (运行时环境提供)
+        const apiKey = "";
+        
+        // --- 新增：划词自动翻译逻辑 ---
+        let autoTranslateEnabled = false;
+        let isTranslating = false; // 防止因为频繁划词导致网络请求冲突
+
+        function toggleAutoTranslate() {
+            autoTranslateEnabled = document.getElementById('autoTranslateToggle').checked;
+            if (autoTranslateEnabled) {
+                showToast("划词自动翻译已开启，请在上方测试区选中文本试试！");
+            }
+        }
+
+        // 监听鼠标抬起事件，获取选中的文本
+        document.addEventListener('mouseup', () => {
+            if (!autoTranslateEnabled) return;
+            
+            // 使用极小延迟确保浏览器已完成选区状态的更新
+            setTimeout(() => {
+                const selectedText = window.getSelection().toString().trim();
+                
+                // 如果选中文本有效且长度大于1（过滤掉点击造成的误触）
+                if (selectedText && selectedText.length > 1) {
+                    const sourceTextArea = document.getElementById('sourceText');
+                    // 避免重复翻译完全相同的内容
+                    if (sourceTextArea.value !== selectedText) {
+                        sourceTextArea.value = selectedText;
+                        performTranslation();
+                    }
+                }
+            }, 10);
+        });
+        // ------------------------------
+
+        // 核心翻译功能
+        async function performTranslation() {
+            if (isTranslating) return; // 如果正在翻译，则拦截新的请求，防止并发
+            
+            const sourceText = document.getElementById('sourceText').value.trim();
+            const resultContainer = document.getElementById('resultContainer');
+            const translateBtn = document.getElementById('translateBtn');
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (!sourceText) {
+                showToast("请输入或粘贴需要翻译的文本");
+                return;
+            }
+
+            // 更新 UI 状态
+            isTranslating = true;
+            translateBtn.disabled = true;
+            translateBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                翻译中...
+            `;
+            resultContainer.innerHTML = '<span class="text-emerald-600 animate-pulse">正在进行深度语义分析和专业词汇匹配...</span>';
+            copyBtn.classList.add('hidden');
+
+            try {
+                // 专门针对地球科学的 System Prompt
+                const systemInstruction = `你是一位顶尖的地球科学领域（包含地质学、地球物理学、气象学、海洋学、岩石学、古生物学等）的资深研究员和专业翻译家。
+请将用户输入的英文学术论文段落翻译成地道、流畅的中文学术语言。
+要求：
+1. 术语必须精准。例如："subduction zone"翻译为"俯冲带"，"mantle plume"翻译为"地幔柱"，"facies"翻译为"相"等。
+2. 保持学术论文严谨、客观的语体风格。
+3. 遇到长难句，在不改变原意的前提下，按照中文表达习惯进行句式重组。
+4. 仅输出翻译后的中文文本，不要包含任何解释性或问候性的话语。`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: sourceText }] }],
+                    systemInstruction: { parts: [{ text: systemInstruction }] }
+                };
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const data = await fetchWithBackoff(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "翻译结果解析失败。";
+                
+                // 将换行符转为 HTML 的 <br>
+                resultContainer.innerHTML = translatedText.replace(/\n/g, '<br>');
+                copyBtn.classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                resultContainer.innerHTML = `<span class="text-red-600 font-semibold">翻译出错：</span><br><span class="text-red-500">${error.message}</span><br>请稍后重试或检查网络连接。`;
+            } finally {
+                // 恢复按钮状态
+                isTranslating = false;
+                translateBtn.disabled = false;
+                translateBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    开始专业翻译
+                `;
+            }
+        }
+
+        // 带有指数退避机制的 Fetch 函数（处理 API 限制）
+        async function fetchWithBackoff(url, options, maxRetries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`请求失败 (状态码: ${response.status})`);
+                    }
+                    return await response.json();
+                } catch (e) {
+                    if (i === maxRetries - 1) throw e;
+                    console.log(`尝试 ${i + 1} 失败, 等待 ${delays[i]}ms 后重试...`);
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        // 复制结果
+        function copyResult() {
+            const resultHtml = document.getElementById('resultContainer').innerHTML;
+            // 简单处理将 HTML <br> 转换回换行符用于纯文本复制
+            const textToCopy = resultHtml.replace(/<br\s*[\/]?>/gi, '\n').replace(/<[^>]+>/g, '');
+            
+            // 兼容 iframe 的复制方法
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("译文已复制到剪贴板！");
+            } catch (err) {
+                showToast("复制失败，请手动选择复制。");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // 清空文本
+        function clearText() {
+            document.getElementById('sourceText').value = '';
+            document.getElementById('resultContainer').innerHTML = '<span class="text-gray-400 italic">翻译结果将显示在这里...</span>';
+            document.getElementById('copyBtn').classList.add('hidden');
+        }
+
+        // 简易的 Toast 提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity duration-300 z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
